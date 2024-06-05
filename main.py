@@ -16,6 +16,8 @@ import somerandomapi
 from discord.ext import commands
 from tweepy.asynchronous import AsyncClient
 
+from utils.command_tree import JDCommandTranslator, JDCommandTree
+
 from cogs import EXTENSIONS
 
 
@@ -87,6 +89,7 @@ class CustomRecordClass(asyncpg.Record):
 
 
 class JDBot(commands.Bot):
+    tree: JDCommandTree  # type: ignore
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.special_access: dict[int, str] = {}
@@ -174,11 +177,13 @@ class JDBot(commands.Bot):
                 return None
 
     async def setup_hook(self) -> None:
+        await self.tree.set_translator(JDCommandTranslator())
         for cog in EXTENSIONS:
             try:
                 await self.load_extension(f"{cog}")
             except commands.errors.ExtensionError:
                 traceback.print_exc()
+                
 
     @functools.cached_property
     def support_webhook(self) -> discord.Webhook:

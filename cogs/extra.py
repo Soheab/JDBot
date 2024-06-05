@@ -1,3 +1,4 @@
+from __future__ import annotations
 import asyncio
 import contextlib
 import functools
@@ -22,12 +23,16 @@ from discord_games import button_games
 
 import utils
 
+if typing.TYPE_CHECKING:
+    from main import JDBot
+
+
 
 class Extra(commands.Cog):
     "Uncategorized Commands, these are more random commands"
 
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: JDBot):
+        self.bot: JDBot = bot
         self.pool = self.bot.db
         self.afk = {}
 
@@ -1210,14 +1215,29 @@ class Extra(commands.Cog):
         if temps.celsius > 30:
             color = 0xFF0000
 
-        embed = discord.Embed(title="Temperature:", color=color)
-        embed.add_field(name="Celsius:", value=f"{temps.celsius:,} °C")
-        embed.add_field(name="Fahrenheit:", value=f"{temps.fahrenheit:,} °F")
-        embed.add_field(name="Kelvin:", value=f"{temps.kelvin:,} °K")
-        embed.add_field(name="Rankine:", value=f"{temps.rankine:,} °R")
-        embed.set_footer(text=f"Chose: {temp_system.value}")
+        
+        temp_celsius = f"{temps.celsius:,}"
+        temp_fahrenheit = f"{temps.fahrenheit:,}"
+        temp_kelvin = f"{temps.kelvin:,}"
+        temp_rankine = f"{temps.rankine:,}"
+        temp_system_value = str(temp_system.value)
 
-        await interaction.response.send_message(embed=embed)
+        embed = discord.Embed(title="Temperature:", color=color)
+        embed.add_field(name="Celsius:", value="{temp_celsius} °C")
+        embed.add_field(name="Fahrenheit:", value="{temp_fahrenheit} °F")
+        embed.add_field(name="Kelvin:", value="{temp_kelvin} °K")
+        embed.add_field(name="Rankine:", value="{temp_rankine} °R")
+        embed.set_footer(text="Chose: {temp_system_value}")
+        
+        embeds = await self.bot.tree.translator.translate_embeds(
+            interaction, [embed],
+            temp_celsius=temp_celsius,
+            temp_fahrenheit=temp_fahrenheit,
+            temp_kelvin=temp_kelvin,
+            temp_rankine=temp_rankine, 
+            temp_system_value=temp_system_value
+        )
+        await interaction.response.send_message(embeds=embeds)
 
     @convert_temperature.error
     async def convert_temperature_error(self, interaction: discord.Interaction, error):
@@ -1226,5 +1246,5 @@ class Extra(commands.Cog):
         traceback.print_exc()
 
 
-async def setup(bot):
+async def setup(bot: JDBot):
     await bot.add_cog(Extra(bot))
